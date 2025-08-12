@@ -13,8 +13,8 @@ def hello():
 
 @router.post("/signup")
 async def signup(user: SignupData):
-    if await user_collection.find_one({"email": user.email}):
-        raise HTTPException(status_code=400, detail="Email already exists")
+    if await user_collection.find_one({"username": user.username}):
+        raise HTTPException(status_code=400, detail="Username already exists")
 
     hashed_pass = create_hash_password(user.password)
     user_dict = user.dict()

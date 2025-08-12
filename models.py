@@ -44,13 +44,11 @@ class Role(str, Enum):
 # ============================================================
 class SignupData(BaseModel):
     username: str
-    email: EmailStr
     password: str
-    hospital_name: str
     role: Role
 
 class LoginData(BaseModel):
-    email: str
+    username: str
     password: str
 
 # ============================================================
