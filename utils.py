@@ -19,49 +19,27 @@ def generate_custom_id(prefix: str, last_id: str) -> str:
     num = int(last_id.split("-")[1]) + 1
     return f"{prefix}-{str(num).zfill(3)}"
 
-def calculate_maws(vitals: Dict) -> int:
+def calculate_mews(hr, sbp, rr, temp):
     """
-    Calculates Modified Early Warning Score (MAWS) based on vitals.
-    vitals example: {"spo2": 95, "bpm": 110, "bp": "140/90", "temp": 38}
+    Calculate Modified Early Warning Score (MEWS)
     """
     score = 0
-
-    # Oxygen saturation
-    if vitals.get("spo2") < 90:
-        score += 3
-    elif 90 <= vitals.get("spo2") <= 94:
+    if hr <= 40 or hr >= 130:
         score += 2
-    elif 95 <= vitals.get("spo2") <= 96:
+    elif 41 <= hr <= 50 or 111 <= hr <= 129:
         score += 1
-
-    # Heart rate
-    bpm = vitals.get("bpm")
-    if bpm < 40 or bpm > 130:
+    if sbp <= 70:
         score += 3
-    elif 40 <= bpm <= 50 or 110 <= bpm <= 130:
+    elif 71 <= sbp <= 80:
         score += 2
-    elif 51 <= bpm <= 60 or 100 <= bpm <= 109:
+    elif 81 <= sbp <= 100 or sbp >= 200:
         score += 1
-
-    # Blood pressure (systolic)
-    try:
-        systolic = int(vitals.get("bp", "0/0").split("/")[0])
-        if systolic < 70 or systolic > 200:
-            score += 3
-        elif 70 <= systolic <= 80 or 180 <= systolic <= 200:
-            score += 2
-        elif 81 <= systolic <= 100 or 150 <= systolic <= 179:
-            score += 1
-    except ValueError:
-        pass
-
-    # Temperature
-    temp = vitals.get("temp")
-    if temp < 35 or temp > 39:
-        score += 3
-    elif 35 <= temp <= 36 or 38 <= temp <= 39:
+    if rr <= 8 or rr >= 30:
+        score += 2
+    elif 21 <= rr <= 29:
         score += 1
-
+    if temp < 35 or temp > 38.5:
+        score += 2
     return score
 
 def convert_symptoms(symptoms):

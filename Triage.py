@@ -1,11 +1,12 @@
-
+import sklearn
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split , GridSearchCV
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
-import pandas as pd
+import pandas as pd 
+import numpy as np
 import joblib
-df = pd.read_csv("RANDOM.csv")
+df = pd.read_csv("balanced_triage.csv")
 
 df = df.dropna()
 print(df.columns)
@@ -23,8 +24,8 @@ X_test = scaler.transform(X_test)
 model = RandomForestRegressor(n_estimators=100, random_state = 42)
 
 param_grid = {
-    "n_estimators": [100,200],
-    "max_depth": [10,20,None],
+    "n_estimators": [300,500],
+    "max_depth": [20,None],
     "min_samples_split": [2,5],
     "max_features": ["sqrt", "log2"]
 }
@@ -37,10 +38,13 @@ print("Best parameters found: ", grid_search.best_params_)
 y_pred = best_model.predict(X_test)
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
-print(f"Test MSE:{mse: .2f}")
-print(f"Test R^2: {r2: ,.2f}")
+print(f"Test MSE:{mse: .2f} ")
+print(f"Test R^2: {r2: .2f}")
 
 feature_importance = pd.Series(best_model.feature_importances_, index=X.columns)
 print("Feature Importances\n", feature_importance.sort_values(ascending=False))
-joblib.dump(best_model , "triage_model.pkl")
-print("Model has been trained and saved to the file successfully")
+joblib.dump(best_model , "triage_model.pkl") 
+joblib.dump(scaler, "scaler.pkl")
+print("Both the models hae been trained and saved successfully")
+print("Features during training:")
+print(X.columns.tolist())
