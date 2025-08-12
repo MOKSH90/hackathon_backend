@@ -26,18 +26,19 @@ async def signup(user: SignupData):
 
     return {
         "message": "Signup successful",
-        "user": user.email,
+        "user": user.username,
         "id": inserted_id
     }
 
 @router.post("/login")
 async def login(user: LoginData):
-    db_user = await user_collection.find_one({"email": user.email})
+    db_user = await user_collection.find_one({"username": user.username})
     if not db_user or not verify_password(user.password, db_user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    access_token = create_access_token({"sub": user.email})
-    refresh_token = create_refresh_token({"sub": user.email})
+    access_token = create_access_token({"sub": user.username})
+    refresh_token = create_refresh_token({"sub": user.username})
     return {"access_token": access_token, "refresh_token": refresh_token, "role": db_user["role"]}
+
 
 @router.post("/refresh")
 async def refresh_token(refresh_token: str):
