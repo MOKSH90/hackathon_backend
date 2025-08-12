@@ -10,16 +10,25 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 def hello():
     return{"hello"}
 
+
 @router.post("/signup")
 async def signup(user: SignupData):
     if await user_collection.find_one({"email": user.email}):
         raise HTTPException(status_code=400, detail="Email already exists")
+
     hashed_pass = create_hash_password(user.password)
     user_dict = user.dict()
     user_dict["hashed_password"] = hashed_pass
     del user_dict["password"]
-    await user_collection.insert_one(user_dict)
-    return {"message": "Signup successful", "user": user.email}
+
+    result = await user_collection.insert_one(user_dict)
+    inserted_id = str(result.inserted_id)  # convert ObjectId to string for JSON
+
+    return {
+        "message": "Signup successful",
+        "user": user.email,
+        "id": inserted_id
+    }
 
 @router.post("/login")
 async def login(user: LoginData):

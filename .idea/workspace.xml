@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="90279182-8280-4b1f-a569-f071addf9e02" name="Changes" comment="updated requirments" />
+    <list default="true" id="90279182-8280-4b1f-a569-f071addf9e02" name="Changes" comment="added files">
+      <change beforePath="$PROJECT_DIR$/.idea/hackathon_backend.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/hackathon_backend.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/auth.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -83,13 +86,22 @@
       <option name="project" value="LOCAL" />
       <updated>1755034199300</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="added files">
+      <option name="closed" value="true" />
+      <created>1755034814405</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1755034814405</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="added requirments" />
     <MESSAGE value="updated requirments" />
-    <option name="LAST_COMMIT_MESSAGE" value="updated requirments" />
+    <MESSAGE value="added files" />
+    <option name="LAST_COMMIT_MESSAGE" value="added files" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
