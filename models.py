@@ -49,6 +49,8 @@ class LoginData(BaseModel):
 # PATIENT MODELS
 # ============================================================
 
+class PatientSymptoms(BaseModel):
+    symptoms: List[str]
 
 def calculate_mews(hr, sbp, dbp, rr, temp, spo2):
     """

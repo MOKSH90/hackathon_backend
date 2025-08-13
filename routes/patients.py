@@ -4,6 +4,8 @@ from pymongo import ReturnDocument
 from config import patient_collection, counter_collection, bed_collection, archive_collection
 from models import calculate_mews as calc_mews_ext, Department
 from ml_model import model, model_lock
+from bson import ObjectId
+ 
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
 
@@ -68,16 +70,17 @@ async def add_patient(request: Request):
         temperature = data.get("temperature")
         spo2 = data.get("spo2")
         # Symptoms (as int 0/1)
-        chest_pain = data.get("chest_pain", 0)
-        shortness_of_breath = data.get("shortness_of_breath", 0)
-        fever = data.get("fever", 0)
-        cough = data.get("cough", 0)
-        fatigue = data.get("fatigue", 0)
-        dizziness = data.get("dizziness", 0)
-        nausea = data.get("nausea", 0)
-        confusion = data.get("confusion", 0)
-        abdominal_pain = data.get("abdominal_pain", 0)
-        headache = data.get("headache", 0)
+        # Convert integer symptoms to boolean
+        chest_pain = bool(data.get("chest_pain", 0))
+        shortness_of_breath = bool(data.get("shortness_of_breath", 0))
+        fever = bool(data.get("fever", 0))
+        cough = bool(data.get("cough", 0))
+        fatigue = bool(data.get("fatigue", 0))
+        dizziness = bool(data.get("dizziness", 0))
+        nausea = bool(data.get("nausea", 0))
+        confusion = bool(data.get("confusion", 0))
+        abdominal_pain = bool(data.get("abdominal_pain", 0))
+        headache = bool(data.get("headache", 0))
 
         # Calculate MEWS using extended function
         mews_score = calc_mews_ext(
@@ -139,20 +142,26 @@ async def add_patient(request: Request):
         print(f"Error in add_patient: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to add patient: {str(e)}")
 
-@router.get("")
+def convert_object_ids(data):
+    if isinstance(data, dict):
+        return {k: convert_object_ids(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [convert_object_ids(i) for i in data]
+    elif isinstance(data, ObjectId):
+        return str(data)
+    return data
+
+@router.get("/patients")
 async def get_patients():
-    """
-    Retrieve all patients from the database.
-    """
     try:
         patients_cursor = patient_collection.find()
         patients = []
         async for patient in patients_cursor:
-            patient["_id"] = str(patient["_id"])
-            patients.append(patient)
+            patients.append(convert_object_ids(patient))
         return patients
     except Exception as e:
-        print(f"Error retrieving patients: {e}")
+        print("Error retrieving patients:")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to retrieve patients: {str(e)}")
 
 @router.get("/{patient_id}")

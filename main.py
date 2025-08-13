@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes import auth, patients, beds, feedback, doctor, model_routes
+import ml_model
 
 app = FastAPI()
 
@@ -11,6 +12,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def startup_event():
+    ml_model.load_model_and_scaler()
 
 # Register routes
 app.include_router(auth.router)

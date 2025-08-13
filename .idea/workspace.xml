@@ -5,18 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="90279182-8280-4b1f-a569-f071addf9e02" name="Changes" comment="changed email to username and removed hospital_name">
-      <change afterPath="$PROJECT_DIR$/routes/model_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/hackathon_backend.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/hackathon_backend.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/balanced_triage.csv" beforeDir="false" afterPath="$PROJECT_DIR$/balanced_triage.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ml_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/ml_model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/auth.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routes/patients.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/patients.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scaler.pkl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/triage_model.pkl" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -133,5 +123,15 @@
     <MESSAGE value="added userid" />
     <MESSAGE value="changed email to username and removed hospital_name" />
     <option name="LAST_COMMIT_MESSAGE" value="changed email to username and removed hospital_name" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/utils.py</url>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
