@@ -235,11 +235,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-<<<<<<< HEAD
-@app.on_event("startup")
-async def startup_event():
-    ml_model.load_model_and_scaler()
-=======
+
 router = APIRouter(
     prefix="/triage",
     tags=["Triage System"]
@@ -296,7 +292,7 @@ def submit_feedback(feedback: FeedbackData):
 @router.get("/health")
 def health_check():
     return {"status": "ok", "model_features": feature_columns}
->>>>>>> 89b6fb4544a68cdde1c211ab6ddd15c8c32c66fe
+
 
 # Register routes
 app.include_router(router)
