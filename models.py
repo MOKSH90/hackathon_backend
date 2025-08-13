@@ -14,6 +14,11 @@ from datetime import datetime
 # ============================================================
 # ML MODEL LOGIC
 # ============================================================
+
+
+class PatientSymptoms(BaseModel):
+    symptoms: List[str]
+
 # Define feature columns in the order expected by the model
 feature_columns = [
     "age", "chest_pain", "shortness_of_breath", "fever", "cough", "fatigue",

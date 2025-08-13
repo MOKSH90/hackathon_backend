@@ -42,16 +42,16 @@ def calculate_mews(hr, sbp, rr, temp):
         score += 2
     return score
 
-# def convert_symptoms(symptoms):
-#     """
-#     Convert PatientSymptoms boolean values into numeric (0/1) for ML model.
-#     """
-#     if isinstance(symptoms, dict):
-#         # If already a dict (e.g., from request body)
-#         return [1 if symptoms.get(key) else 0 for key in symptoms]
-#     else:
-#         # If it's a Pydantic model instance
-#         return [1 if getattr(symptoms, field) else 0 for field in symptoms.model_fields]
+def convert_symptoms(symptoms):
+    """
+    Convert PatientSymptoms boolean values into numeric (0/1) for ML model.
+    """
+    if isinstance(symptoms, dict):
+        # If already a dict (e.g., from request body)
+        return [1 if symptoms.get(key) else 0 for key in symptoms]
+    else:
+        # If it's a Pydantic model instance
+        return [1 if getattr(symptoms, field) else 0 for field in symptoms.model_fields]
 
 def retrain_model(new_data=None):
     """
