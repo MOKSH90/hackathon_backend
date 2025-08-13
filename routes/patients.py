@@ -197,11 +197,20 @@ async def add_patient(patient: dict):
 
         # Save to DB
 
+        if 1 <= severity <= 3:
+            condition = "Safe"
+        elif 4 <= severity <= 6:
+            condition = "Urgent"
+        elif 7 <= severity <= 10:
+            condition = "Critical"
+        
+
         return {
             "message": "Patient added successfully",
             "patient_id": patient_dict["patient_id"],
             "severity_score": severity,
-            "mews_score": mews_score
+            "mews_score": mews_score,
+            "condition": condition
         }
 
     except Exception as e:
