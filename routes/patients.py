@@ -3,10 +3,20 @@ from datetime import datetime
 from pymongo import ReturnDocument
 from config import patient_collection, counter_collection, bed_collection, archive_collection
 from models import Patient, PatientSymptoms, Department
-from utils import calculate_maws, convert_symptoms
+from utils import calculate_mews, convert_symptoms
 from ml_model import model, model_lock
+import logging
+from ml_model import load_model_and_scaler
+import joblib 
+import pandas as pd
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
+
+logging.basicConfig(
+    level=logging.INFO,  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 async def get_next_patient_id():
     if not await counter_collection.find_one({"_id": "patient_id"}):
@@ -32,61 +42,133 @@ async def get_next_bed_id(department: Department):
     await bed_collection.update_one({"bed_id": bed["bed_id"]}, {"$set": {"occupied": True}})
     return bed["bed_id"]
 
-@router.post("")
-async def add_patient(patient: Patient):
+@router.post("/add-patient")
+async def add_patient(patient: dict):
+    """
+    Add a new patient to the system, assign a bed, calculate MEWS and severity.
+    Accepts flat JSON with vitals and symptoms.
+    """
     try:
-        patient_dict = patient.model_dump()
-        patient_id = await get_next_patient_id()
-        maws_score = calculate_maws(patient.vitals)
+        # Load model & scaler fresh (no globals)
+        local_model = joblib.load("triage_model.pkl")
+        local_scaler = joblib.load("scaler.pkl")
 
-        features = [
-            patient.age,
-            patient.vitals.bp_systolic,
-            patient.vitals.bp_diastolic,
-            patient.vitals.spo2,
-            patient.vitals.temperature,
-            patient.vitals.blood_sugar,
-            patient.vitals.bpm,
-            patient.vitals.respiratory_rate,
-            maws_score
-        ]
+        # Load feature column order
+        df = pd.read_csv("balanced_triage.csv")
+        feature_columns = [c for c in df.columns if c != "severity_score"]
+        logger.info(f"Feature columns: {feature_columns}")
 
-        with model_lock:
-            severity = model.predict([features])[0]
+        # Extract vitals
+        name = patient.get("name")
+        age = patient.get("age")
+        gender = patient.get("gender")
+        heart_rate = patient.get("heart_rate")
+        systolic_bp = patient.get("systolic_bp")
+        diastolic_bp = patient.get("diastolic_bp")
+        resp_rate = patient.get("resp_rate")
+        temperature = patient.get("temperature")
+        spo2 = patient.get("spo2")
 
-        if severity > 80:
-            department = Department.icu
-        elif severity > 50:
-            department = Department.emergency
-        else:
-            department = Department.general_ward
+        # Symptoms as integers
+        chest_pain = int(patient.get("chest_pain", 0))
+        shortness_of_breath = int(patient.get("shortness_of_breath", 0))
+        fever = int(patient.get("fever", 0))
+        cough = int(patient.get("cough", 0))
+        fatigue = int(patient.get("fatigue", 0))
+        dizziness = int(patient.get("dizziness", 0))
+        nausea = int(patient.get("nausea", 0))
+        confusion = int(patient.get("confusion", 0))
+        abdominal_pain = int(patient.get("abdominal_pain", 0))
+        headache = int(patient.get("headache", 0))
+        logger.info(f"Vitals before MEWS: HR={heart_rate} ({type(heart_rate)}), "
+            f"SBP={systolic_bp} ({type(systolic_bp)}), "
+            f"RR={resp_rate} ({type(resp_rate)}), "
+            f"TEMP={temperature} ({type(temperature)})")
+        # Calculate MEWS
+        mews_score = calculate_mews(heart_rate, systolic_bp, resp_rate, temperature)
+        logger.info(f"Calculated MEWS score: {mews_score}")
 
-        bed_id = await get_next_bed_id(department)
+        # Build feature dict in correct order
+        feature_dict = {
+            "age": age,
+            "chest_pain": chest_pain,
+            "shortness_of_breath": shortness_of_breath,
+            "fever": fever,
+            "cough": cough,
+            "fatigue": fatigue,
+            "dizziness": dizziness,
+            "nausea": nausea,
+            "confusion": confusion,
+            "abdominal_pain": abdominal_pain,
+            "headache": headache,
+            "heart_rate": heart_rate,
+            "systolic_bp": systolic_bp,
+            "diastolic_bp": diastolic_bp,
+            "spo2": spo2,
+            "resp_rate": resp_rate,
+            "temperature": temperature,
+            "mews_score": mews_score
+        }
 
-        patient_dict.update({
-            "patient_id": patient_id,
-            "maws": maws_score,
-            "severity": severity,
-            "department_assigned": department,
-            "bed_id": bed_id,
-            "alert": maws_score >= 6,
-            "vital_history": [{"timestamp": datetime.utcnow(), "vitals": patient.vitals.dict()}]
-        })
+        # Create ordered feature list
+        features = [feature_dict[col] for col in feature_columns]
+        logger.info(f"Features: {features}")
+        # Scale and predict
+        features_scaled = local_scaler.transform([features])
+        severity = float(local_model.predict(features_scaled)[0])
+        logger.info(f"Predicted severity score: {severity}")
 
-        result = await patient_collection.insert_one(patient_dict)
-        patient_dict["_id"] = str(result.inserted_id)
-        patient_dict["symptoms"] = convert_symptoms(patient_dict.get("symptoms", []))
+        # Prepare patient dict for DB
+        patient_dict = {
+            "patient_id": await get_next_patient_id(),
+            "name": name,
+            "age": age,
+            "gender": gender,
+            "heart_rate": heart_rate,
+            "systolic_bp": systolic_bp,
+            "diastolic_bp": diastolic_bp,
+            "resp_rate": resp_rate,
+            "temperature": temperature,
+            "spo2": spo2,
+            "chest_pain": chest_pain,
+            "shortness_of_breath": shortness_of_breath,
+            "fever": fever,
+            "cough": cough,
+            "fatigue": fatigue,
+            "dizziness": dizziness,
+            "nausea": nausea,
+            "confusion": confusion,
+            "abdominal_pain": abdominal_pain,
+            "headache": headache,
+            "severity_score": severity,
+            "mews_score": mews_score,
+            "created_at": datetime.utcnow().isoformat()
+        }
+        await patient_collection.insert_one(patient_dict)
 
-        return {"message": "Patient added successfully", "patient": patient_dict}
+        # Assign bed
+        # department = patient.get("department", "General")
+        # bed_id = await get_next_bed_id(department)
+        # patient_dict["department"] = department
+        # patient_dict["bed_id"] = bed_id
+
+        # Save to DB
+
+        return {
+            "message": "Patient added successfully",
+            "patient_id": patient_dict["patient_id"],
+            "severity_score": severity,
+            "mews_score": mews_score
+        }
 
     except Exception as e:
-        print("Error while adding patient:", e)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        print(f"Error in add_patient: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to add patient: {str(e)}")
 
 @router.post("/symptoms")
 async def patient_symptoms(data: PatientSymptoms):
     patient = await patient_collection.find_one({"patient_id": data.patient_id})
-    if not patient:
+    if not patient: 
         raise HTTPException(status_code=404, detail="Patient not found")
     await patient_collection.update_one(
         {"patient_id": data.patient_id},

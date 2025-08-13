@@ -21,18 +21,18 @@ import os
 import json
 from datetime import datetime
 import pandas as pd
+import numpy as np
 import joblib
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score
 
 # ---------- CONFIG ----------
-CSV_PATH = "balanced_triage.csv"       # Main dataset
-FEEDBACK_CSV = "feedback.csv"          # New feedback to append
-MODEL_DIR = "models"                   # Where to save models
-MODEL_LATEST = "triage_model.pkl"      # For API to load
-SCALER_LATEST = "scaler.pkl"           # For API to load
-FEATURES_JSON = "feature_columns.json" # Store feature order
+CSV_PATH = "balanced_triage.csv"      # Main dataset
+FEEDBACK_CSV = "feedback.csv"         # New feedback to append
+MODEL_DIR = "models"                  # Where to save models
+MODEL_LATEST = "triage_model_latest.pkl"
+SCALER_LATEST = "scaler_latest.pkl"
 LOG_CSV = "training_log.csv"
 
 RFR_PARAMS = {
@@ -47,17 +47,13 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 def timestamp_str():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
-def load_csv(path, required_columns=None):
-    """Load CSV and drop NaN rows only for required columns."""
+def load_csv(path):
     if not os.path.exists(path):
         raise FileNotFoundError(f"{path} not found.")
-    df = pd.read_csv(path)
-    if required_columns:
-        df = df.dropna(subset=required_columns)
+    df = pd.read_csv(path).dropna()
     return df
 
 def get_feature_columns(df):
-    """Return feature columns (exclude severity_score)."""
     if "severity_score" not in df.columns:
         raise ValueError("CSV must contain 'severity_score' column")
     return [c for c in df.columns if c != "severity_score"]
@@ -75,20 +71,18 @@ def append_feedback():
 
     main_df = load_csv(CSV_PATH)
     expected_features = get_feature_columns(main_df)
-    numeric_features = main_df[expected_features].select_dtypes(include=["number"]).columns.tolist()
 
-    # Validate required columns
-    missing = [c for c in numeric_features + ["severity_score"] if c not in feedback_df.columns]
+    # Validate columns
+    missing = [c for c in expected_features + ["severity_score"] if c not in feedback_df.columns]
     if missing:
-        raise ValueError(f"Feedback CSV missing required numeric columns: {missing}")
+        raise ValueError(f"Feedback CSV missing columns: {missing}")
 
-    # Append feedback to main dataset
     updated_df = pd.concat([main_df, feedback_df], ignore_index=True)
     updated_df.to_csv(CSV_PATH, index=False)
     print(f"[INFO] Appended {len(feedback_df)} feedback rows to {CSV_PATH}")
 
-    # Clear feedback.csv but keep headers
-    pd.DataFrame(columns=feedback_df.columns).to_csv(FEEDBACK_CSV, index=False)
+    # Clear feedback file
+    open(FEEDBACK_CSV, "w").close()
     print("[INFO] Cleared feedback.csv")
 
 def train_and_save():
@@ -96,8 +90,7 @@ def train_and_save():
     df = load_csv(CSV_PATH)
     features = get_feature_columns(df)
 
-    # Keep numeric features only
-    X = df[features].select_dtypes(include=["number"])
+    X = df[features].select_dtypes(include=[np.number])  # keep numeric only
     y = df["severity_score"]
 
     scaler = StandardScaler()
@@ -113,17 +106,12 @@ def train_and_save():
     model_path = os.path.join(MODEL_DIR, f"triage_model_{ts}.pkl")
     scaler_path = os.path.join(MODEL_DIR, f"scaler_{ts}.pkl")
 
-    # Save timestamped versions
     joblib.dump(model, model_path)
     joblib.dump(scaler, scaler_path)
 
-    # Save latest versions for API
+    # Save "latest" copies for API use
     joblib.dump(model, MODEL_LATEST)
     joblib.dump(scaler, SCALER_LATEST)
-
-    # Save feature column order for API use
-    with open(FEATURES_JSON, "w") as f:
-        json.dump(features, f)
 
     # Log training
     log_row = {

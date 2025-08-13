@@ -6,7 +6,7 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd 
 import numpy as np
 import joblib
-df = pd.read_csv("balanced_triage.csv")
+df = pd.read_csv("balanced_triage_20.csv")
 
 df = df.dropna()
 print(df.columns)
@@ -48,3 +48,32 @@ joblib.dump(scaler, "scaler.pkl")
 print("Both the models hae been trained and saved successfully")
 print("Features during training:")
 print(X.columns.tolist())
+
+
+# # Confidence Calculation
+# # -------------------
+# confidence_threshold = 0.5  # between 0 and 1
+
+# # Predictions from each tree
+# all_tree_preds = np.array([tree.predict(X_test) for tree in best_model.estimators_])
+
+# # Standard deviation of predictions
+# prediction_std = np.std(all_tree_preds, axis=0)
+
+# # Confidence score: higher std → lower confidence
+# confidence_scores = 1 / (1 + prediction_std)
+
+# # Generate confidence messages
+# confidence_messages = [
+#     "I am confident" if conf >= confidence_threshold else "I am not confident"
+#     for conf in confidence_scores
+# ]
+
+# # Combine results
+# results_df = pd.DataFrame({
+#     "predicted_severity": y_pred,
+#     "confidence_score": confidence_scores,
+#     "confidence_message": confidence_messages
+# })
+
+# print(results_df.head())
