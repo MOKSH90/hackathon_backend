@@ -26,7 +26,6 @@ scaler = None
 feature_columns = None
 
 def load_model_and_scaler():
-    """Load the trained model, scaler, and feature names."""
     global model, scaler, feature_columns
     if not os.path.exists(MODEL_PATH) or not os.path.exists(SCALER_PATH):
         raise FileNotFoundError("Model or scaler not found. Train first.")
@@ -35,12 +34,25 @@ def load_model_and_scaler():
     df = pd.read_csv(CSV_PATH)
     feature_columns = [c for c in df.columns if c != "severity_score"]
 
+
 def predict_single(input_dict: dict) -> float:
     """Predict severity score for a single input dictionary."""
     global model, scaler, feature_columns
-    X = pd.DataFrame([input_dict])[feature_columns]
-    X_scaled = scaler.transform(X)
-    return float(model.predict(X_scaled)[0])
+    with model_lock:
+        # Create a copy to avoid modifying the input
+        input_dict = input_dict.copy()
+        # Map respiratory_rate to resp_rate if present
+        if "respiratory_rate" in input_dict:
+            input_dict["resp_rate"] = input_dict.pop("respiratory_rate")
+        # Ensure input has all required feature columns, default to 0 if missing
+        input_data = {col: input_dict.get(col, 0) for col in feature_columns}
+        try:
+            X = pd.DataFrame([input_data])[feature_columns]
+            X_scaled = scaler.transform(X)
+            return float(model.predict(X_scaled)[0])
+        except Exception as e:
+            print(f"Prediction error: {str(e)}")
+            raise
 
 def retrain_model():
     """Retrain the model using the latest CSV data."""

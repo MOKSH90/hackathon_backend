@@ -17,7 +17,7 @@ async def signup(user: SignupData):
         raise HTTPException(status_code=400, detail="Username already exists")
 
     hashed_pass = create_hash_password(user.password)
-    user_dict = user.dict()
+    user_dict = user.model_dump()
     user_dict["hashed_password"] = hashed_pass
     del user_dict["password"]
 
